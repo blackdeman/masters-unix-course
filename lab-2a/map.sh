@@ -30,19 +30,19 @@ NUM_THREADS_IN_PARALLEL=1
 while [ "$1" != "" ]; do
   case $1 in
     -c | --cmd )            shift
-                            COMMAND=$1
+			    COMMAND=$1
                             ;;
     -i | --input )    	    STANDART_INPUT=1
                             ;;
     -t | --threads )	    shift
-			    NUM_THREADS_IN_PARALLEL=$1
+		            NUM_THREADS_IN_PARALLEL=$1
 			    ;;
-    -h | --help )           usage # need to add help
+    -h | --help )           usage
                             exit
                             ;;
     * )                     if [ ! -z "$FILE" ]; then
-			    echo "Only one file can be passed as positional argument (multiple files: $FILE, $1)"				
-			    usage
+			      echo "Only one file can be passed as positional argument (multiple files: $FILE, $1)"
+			      usage
 		            exit				
 			    fi
 			    FILE=$1
@@ -56,14 +56,19 @@ done
 #echo 'Input flag ' $STANDART_INPUT
 #echo 'Threads '$NUM_THREADS_IN_PARALLEL
 
+if [ -z "$FILE" ]; then
+  echo "Input file should be specified"
+  usage
+  exit
+fi
+
 # Проверка существования входного файла
 if [ ! -f "$FILE" ]; then
   echo "File $FILE doesn't exist"
   exit
 fi
 # Проверка корректности количества параллельно исполняемых команд
-#  2>/dev/null
-if ! [ "$NUM_THREADS_IN_PARALLEL" -ge 1 ]; then
+if ! [ "$NUM_THREADS_IN_PARALLEL" -ge 1 2>/dev/null ]; then
   echo "Threads parameter '$NUM_THREADS_IN_PARALLEL' is not valid"
   usage
   exit

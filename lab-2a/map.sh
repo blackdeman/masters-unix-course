@@ -18,92 +18,92 @@ usage ()
 
 # Переменные для входных данных
 # Файл, из которого будем производиться чтение
-FILE=
+file=
 # Команда, которая будет выполняться для строк из файлы
-COMMAND=echo
+command=echo
 # Передача строки как аргумента или на стандартный вход
-STANDART_INPUT=0
+standart_input=0
 # Количество копий команды, запускаемых одновременно
-NUM_THREADS_IN_PARALLEL=1
+num_threads_in_parallel=1
 
 # Парсинг аргументов командной строки
 while [ "$1" != "" ]; do
   case $1 in
     -c | --cmd )            shift
-			    COMMAND=$1
+			    command=$1
                             ;;
-    -i | --input )    	    STANDART_INPUT=1
+    -i | --input )    	    standart_input=1
                             ;;
     -t | --threads )	    shift
-		            NUM_THREADS_IN_PARALLEL=$1
+		            num_threads_in_parallel=$1
 			    ;;
     -h | --help )           usage
                             exit
                             ;;
-    * )                     if [ ! -z "$FILE" ]; then
-			      echo "Only one file can be passed as positional argument (multiple files: $FILE, $1)"
+    * )                     if [ ! -z "$file" ]; then
+			      echo "Only one file can be passed as positional argument (multiple files: $file, $1)"
 			      usage
 		            exit				
 			    fi
-			    FILE=$1
+			    file=$1
                             ;;
   esac
   shift
 done
 
-#echo 'File ' $FILE
-#echo 'Command ' $COMMAND
-#echo 'Input flag ' $STANDART_INPUT
-#echo 'Threads '$NUM_THREADS_IN_PARALLEL
+#echo 'File ' $file
+#echo 'Command ' $command
+#echo 'Input flag ' $standart_input
+#echo 'Threads '$num_threads_in_parallel
 
-if [ -z "$FILE" ]; then
+if [ -z "$file" ]; then
   echo "Input file should be specified"
   usage
   exit
 fi
 
 # Проверка существования входного файла
-if [ ! -f "$FILE" ]; then
-  echo "File $FILE doesn't exist"
+if [ ! -f "$file" ]; then
+  echo "File $file doesn't exist"
   exit
 fi
 # Проверка корректности количества параллельно исполняемых команд
-if ! [ "$NUM_THREADS_IN_PARALLEL" -ge 1 2>/dev/null ]; then
-  echo "Threads parameter '$NUM_THREADS_IN_PARALLEL' is not valid"
+if ! [ "$num_threads_in_parallel" -ge 1 2>/dev/null ]; then
+  echo "Threads parameter '$num_threads_in_parallel' is not valid"
   usage
   exit
 fi
 
 # Формирование строки, которую необходимо будет выполнять (например, 'echo ' или 'echo < ')
-COMMAND_PREFIX=
-if [ $STANDART_INPUT -eq 0 ]; then
-  COMMAND_PREFIX=$COMMAND' '
+command_prefix=
+if [ $standart_input -eq 0 ]; then
+  command_prefix=$command' '
 else
-  COMMAND_PREFIX=$COMMAND' < '
+  command_prefix=$command' < '
 fi
 
-CONCATENATED_COMMANDS_COUNT=0
-COMMAND_TO_EVAL=
+concatenated_commands_count=0
+command_to_eval=
 
-# Читаем все строки подряд, с помощью них формируем исполняемые команды и приклеиваем к переменной COMMAND_TO_EVAL
-# Когда счетчик приклеенных команд достигает значения NUM_THREADS_IN_PARALLEL, выполняем команду
+# Читаем все строки подряд, с помощью них формируем исполняемые команды и приклеиваем к переменной command_to_eval
+# Когда счетчик приклеенных команд достигает значения num_threads_in_parallel, выполняем команду
 # В случае паралеллельного исполнения одной копии, команды будут вида 'echo текущая_строка & wait'
 # В случае паралеллельного исполнения двух копий, команды будут вида 'echo предыдущая_строка & echo текущая_строка & wait'
 # и так далее
 while IFS='' read -r line; do
-  if [ $CONCATENATED_COMMANDS_COUNT -gt 0 ]; then
-    COMMAND_TO_EVAL="$COMMAND_TO_EVAL & "
+  if [ $concatenated_commands_count -gt 0 ]; then
+    command_to_eval="$command_to_eval & "
   fi
-  COMMAND_TO_EVAL="$COMMAND_TO_EVAL$COMMAND_PREFIX\"$line\""
-  CONCATENATED_COMMANDS_COUNT=$((CONCATENATED_COMMANDS_COUNT+1))	
-  if [ $CONCATENATED_COMMANDS_COUNT -eq "$NUM_THREADS_IN_PARALLEL" ]; then
-    eval "$COMMAND_TO_EVAL & wait"
-    CONCATENATED_COMMANDS_COUNT=0
-    COMMAND_TO_EVAL=
+  command_to_eval="$command_to_eval$command_prefix\"$line\""
+  concatenated_commands_count=$((concatenated_commands_count+1))
+  if [ $concatenated_commands_count -eq "$num_threads_in_parallel" ]; then
+    eval "$command_to_eval & wait"
+    concatenated_commands_count=0
+    command_to_eval=
   fi
-done < "$FILE"
+done < "$file"
 # Если количество строк не делится нацело на количество параллельно исполняемых команд, 
-# то последние команды е будут выполнены в цикле, поэтому выполняем их отдельно
-if [ -n "$COMMAND_TO_EVAL" ]; then
-  eval "$COMMAND_TO_EVAL & wait"
+# то последние команды не будут выполнены в цикле, поэтому выполняем их отдельно
+if [ ! -z "$command_to_eval" ]; then
+  eval "$command_to_eval & wait"
 fi

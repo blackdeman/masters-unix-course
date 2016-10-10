@@ -68,7 +68,7 @@ if [ ! -f "$file" ]; then
   exit
 fi
 # Проверка корректности количества параллельно исполняемых команд
-if ! [ "$num_threads_in_parallel" -ge 1 2>/dev/null ]; then
+if ! [ "$num_threads_in_parallel" -ge 1 ] 2>/dev/null; then
   echo "Threads parameter '$num_threads_in_parallel' is not valid"
   usage
   exit

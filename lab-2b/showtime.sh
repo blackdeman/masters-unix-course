@@ -1,11 +1,20 @@
 #!/bin/bash
 
+# формат даты, которую необходимо использовать для сравнения по условию
 showtime_time_format_to_compare="date +%s"
+
+# вспомогательная функция для формирования строки вида часы:минуты:секунды по заданному параметру
 function ShowtimeTimeFormat() {
   date --date="@$1" "+%-H:%M:%S"
 }
 
+# trap debug вызывается дважды: сразу после ввода команды пользователем
+# и перед вызовом комманды PROMPT_COMMAND, а меня интересует только первый вызов
+# с помощью этой переменной я игнорирую второй вызов
 showtime_at_prompt=1
+
+# функция, которая благодаря trap debug вызывается после каждого ввода команды пользователем
+# устанавливает значение перемнной showtime_command_start_time в текущее значение времени
 function ShowtimePreCommand() {
   if [ -z "$showtime_at_prompt" ]; then
     return
@@ -15,8 +24,14 @@ function ShowtimePreCommand() {
 }
 trap 'ShowtimePreCommand' DEBUG
 
+# флаг используется для того, чтобы игнорировать первый вызов скрипта в момент
+# вызов с помощью source showtime.sh
 showtime_first_prompt=1
 
+# функция, которая благодаря PROMPT_COMMAND вызывается после завершения
+# введенной пользователем команды
+# считывает значение времени записанное функцией ShowtimePreCommand()
+# сравнивает с текущим и, если необходимо, формирует строку и выводит с помощью команды echo
 function ShowtimePostCommand() {
   showtime_at_prompt=1
 

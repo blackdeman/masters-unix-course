@@ -28,19 +28,38 @@ function ShowtimePostCommand() {
   local command_start_time=$showtime_command_start_time
   local command_end_time=$(eval $showtime_time_format_to_compare)
 
-  #local SEC=1
-  #local MIN=$((60 * $SEC))
-  #local HOUR=$((60 * $MIN))
-  #local DAY=$((24 * $HOUR))
+  if [ "$command_start_time" -eq "$command_end_time" ]; then
+    return
+  fi
 
-  #local command_time=$(($command_end_time - $command_start_time))
-  #local num_days=$(($command_time / $DAY))
-  #local num_hours=$(($command_time % $DAY / $HOUR))
-  #local num_mins=$(($command_time % $HOUR / $MIN))
-  #local num_secs=$(($command_time % $MIN / $SEC))
+  local SEC=1
+  local MIN=$((60 * $SEC))
+  local HOUR=$((60 * $MIN))
+  local DAY=$((24 * $HOUR))
 
-  output_str="["$(ShowtimeTimeFormat $(($command_start_time)))" - "$(ShowtimeTimeFormat $(($command_end_time)))"]"
-  output_str_colored="\033[1;35m${output_str}\033[0m"
+  local command_time=$(($command_end_time - $command_start_time))
+  local num_days=$(($command_time / $DAY))
+  local num_hours=$(($command_time % $DAY / $HOUR))
+  local num_mins=$(($command_time % $HOUR / $MIN))
+  local num_secs=$(($command_time % $MIN / $SEC))
+
+  local time_diff=""
+
+  if [ $num_days -gt 0 ]; then
+    time_diff="${time_diff}${num_days} day "
+  fi
+  if [ $num_hours -gt 0 ]; then
+    time_diff="${time_diff}${num_hours} hour "
+  fi
+  if [ $num_mins -gt 0 ]; then
+    time_diff="${time_diff}${num_mins} min "
+  fi
+  if [ $num_secs -gt 0 ]; then
+    time_diff="${time_diff}${num_secs} sec"
+  fi
+
+  local output_str="["$(ShowtimeTimeFormat $(($command_start_time)))" - "$(ShowtimeTimeFormat $(($command_end_time)))" ($time_diff)]"
+  local output_str_colored="\033[1;35m${output_str}\033[0m"
 
   echo -e "${output_str_colored}"
 }

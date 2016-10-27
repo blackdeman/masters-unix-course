@@ -1,0 +1,8 @@
+hello" && ls -l && echo "world
+line 2 """ hello" && ls -l && echo "world
+line 3
+hello" && ls -l && echo world
+hello" && ls -l && echo 'world
+hello' && ls -l && echo "world
+hello" && ls -l && echo 'world
+test \n hello

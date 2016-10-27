@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # set -xe -o pipefail
 
@@ -13,7 +13,6 @@ usage ()
   echo "    -i, --input	       enable mode when command recieves arguments through standard input"
   echo "    -t, --threads t    number of command's copies, that can be executed in parallel"
   echo "		       (should be greater or equal to 1, default value is 1)"
-  exit
 }
 
 # Переменные для входных данных
@@ -41,9 +40,9 @@ while [ "$1" != "" ]; do
                             exit
                             ;;
     * )                     if [ ! -z "$file" ]; then
-			      echo "Only one file can be passed as positional argument (multiple files: $file, $1)"
-			      usage
-		            exit				
+			      echo "Only one file can be passed as positional argument (multiple files: $file, $1)" >&2
+			      echo "Try 'map.sh --help' for more information" >&2
+		              exit 1
 			    fi
 			    file=$1
                             ;;
@@ -57,21 +56,21 @@ done
 #echo 'Threads '$num_threads_in_parallel
 
 if [ -z "$file" ]; then
-  echo "Input file should be specified"
-  usage
-  exit
+  echo "Input file should be specified" >&2
+  echo "Try 'map.sh --help' for more information" >&2
+  exit 1
 fi
 
 # Проверка существования входного файла
 if [ ! -f "$file" ]; then
-  echo "File $file doesn't exist"
-  exit
+  echo "File $file doesn't exist" >&2
+  exit 1
 fi
 # Проверка корректности количества параллельно исполняемых команд
 if ! [ "$num_threads_in_parallel" -ge 1 ] 2>/dev/null; then
-  echo "Threads parameter '$num_threads_in_parallel' is not valid"
-  usage
-  exit
+  echo "Threads parameter '$num_threads_in_parallel' is not valid" >&2
+  echo "Try 'map.sh --help' for more information" >&2
+  exit 1
 fi
 
 # Формирование строки, которую необходимо будет выполнять (например, 'echo ' или 'echo < ')
@@ -90,17 +89,20 @@ command_to_eval=
 # В случае паралеллельного исполнения одной копии, команды будут вида 'echo текущая_строка & wait'
 # В случае паралеллельного исполнения двух копий, команды будут вида 'echo предыдущая_строка & echo текущая_строка & wait'
 # и так далее
+lines_counter=0
 while IFS='' read -r line; do
+  lines+=("$line")
   if [ $concatenated_commands_count -gt 0 ]; then
     command_to_eval="$command_to_eval & "
   fi
-  command_to_eval="$command_to_eval$command_prefix\"$line\""
+  command_to_eval="$command_to_eval$command_prefix\"\${lines[$lines_counter]}\""
   concatenated_commands_count=$((concatenated_commands_count+1))
   if [ $concatenated_commands_count -eq "$num_threads_in_parallel" ]; then
     eval "$command_to_eval & wait"
     concatenated_commands_count=0
     command_to_eval=
   fi
+  lines_counter=$((lines_counter+1))
 done < "$file"
 # Если количество строк не делится нацело на количество параллельно исполняемых команд, 
 # то последние команды не будут выполнены в цикле, поэтому выполняем их отдельно

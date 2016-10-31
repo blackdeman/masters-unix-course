@@ -3,4 +3,4 @@
 ./map.sh input.txt
 ./map.sh -t 4 input.txt
 ./map.sh -c "cat -E" -t 3 -i input.txt
-./map.sh input-with-commands.txt
+./map.sh input-complex.txt

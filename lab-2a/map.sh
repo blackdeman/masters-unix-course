@@ -89,20 +89,19 @@ command_to_eval=
 # В случае паралеллельного исполнения одной копии, команды будут вида 'echo текущая_строка & wait'
 # В случае паралеллельного исполнения двух копий, команды будут вида 'echo предыдущая_строка & echo текущая_строка & wait'
 # и так далее
-lines_counter=0
 while IFS='' read -r line; do
   lines+=("$line")
   if [ $concatenated_commands_count -gt 0 ]; then
     command_to_eval="$command_to_eval & "
   fi
-  command_to_eval="$command_to_eval$command_prefix\"\${lines[$lines_counter]}\""
+  command_to_eval="$command_to_eval$command_prefix\"\${lines[$concatenated_commands_count]}\""
   concatenated_commands_count=$((concatenated_commands_count+1))
   if [ $concatenated_commands_count -eq "$num_threads_in_parallel" ]; then
     eval "$command_to_eval & wait"
     concatenated_commands_count=0
     command_to_eval=
+    unset -v lines
   fi
-  lines_counter=$((lines_counter+1))
 done < "$file"
 # Если количество строк не делится нацело на количество параллельно исполняемых команд, 
 # то последние команды не будут выполнены в цикле, поэтому выполняем их отдельно

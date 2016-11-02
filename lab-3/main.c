@@ -75,14 +75,14 @@ int main(int argc, char *argv[]) {
         if (pid == 0) {
             char** args = commands + commandStartIndexes[i];
 
-            if (i != commandsCount - 1) {
+            if (i < pipesCount && i != commandsCount - 1) {
                 close(pipes[i][0]);
                 dup2(pipes[i][1], 1);
             }
             execvp(args[0], args);
         }
 
-        if (commandsCount != 1) {
+        if (i < pipesCount) {
             close(pipes[i][1]);
             dup2(pipes[i][0], 0);
         }

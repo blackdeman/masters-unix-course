@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     }
     commandStartIndexes[commandStartIndex++] = 0;
     for (int i = 1; i < argc; ++i) {
-        if (commands[i] == NULL) {
+        if (commands[i] == NULL && i != argc - 1) {
             commandStartIndexes[commandStartIndex++] = i + 1;
         }
     }

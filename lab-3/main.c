@@ -116,23 +116,31 @@ int main(int argc, char *argv[]) {
                 if (close(pipes[i][0]) == -1) {
                     perror("close");
                     cleanup(commands, commandStartIndexes, pipes, pipesCount, children);
+                    return 1;
                 }
                 if (dup2(pipes[i][1], 1) == -1) {
                     perror("dup2");
                     cleanup(commands, commandStartIndexes, pipes, pipesCount, children);
+                    return 1;
                 }
             }
-            execvp(args[0], args);
+            if (execvp(args[0], args) == -1) {
+               perror("execvp");
+               cleanup(commands, commandStartIndexes, pipes, pipesCount, children);
+               return 1;
+	    }
         }
 
         if (commandsCount != 1 && i < pipesCount) {
             if (close(pipes[i][1]) == -1) {
                 perror("close");
                 cleanup(commands, commandStartIndexes, pipes, pipesCount, children);
+                return 1;
             }
             if (dup2(pipes[i][0], 0) == -1) {
                 perror("pipe");
                 cleanup(commands, commandStartIndexes, pipes, pipesCount, children);
+                return 1;
             }
         }
 

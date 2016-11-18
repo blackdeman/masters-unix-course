@@ -109,6 +109,12 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < commandsCount; ++i) {
         pid_t pid = fork();
 
+	if (pid == -1) {
+		perror("fork");
+                cleanup(commands, commandStartIndexes, pipes, pipesCount, children);
+                return 1;
+	}
+
         if (pid == 0) {
             char** args = commands + commandStartIndexes[i];
 

@@ -24,4 +24,6 @@ int main(int argc, char** argv) {
 		perror("munmap");
 		return 1;
 	}
+
+	return 0;
 }

@@ -18,7 +18,6 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	while(1);
 	getchar();
 
 	if (munmap(p, size) == -1) {

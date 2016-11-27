@@ -10,9 +10,9 @@ int main(int argc, char** argv) {
 		sizeInTb = atoi(argv[1]);
 	}
 
-	off_t size = (unsigned long)sizeInTb << 40;
+	size_t size = (unsigned long)sizeInTb << 40;
 
-	void* p = mmap(NULL, (size_t)size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+	void* p = mmap(NULL, size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
 	if (p == MAP_FAILED) {
        		perror("mmap");
 		return 1;

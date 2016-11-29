@@ -54,22 +54,25 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Connected.\n");
 
     uint32_t left = 0, right = MAX, guess = 0, guessNetwork;
-    int attempt = 1, retCode = 0;
+    int attempt = 1, retCode = 1;
 
     char result = ' ';
 
-    while (result != '=') {
+    for (;;) {
+
+	if (result == '=') {
+	    retCode = 0;
+	    break;
+	}
 
 	if (attempt > MAX_ATTEMPTS) {
 	    fprintf(stderr, "limit of attempts reached, exit...\n");
-	    retCode = 1;
 	    break;
 	}
 
 	if (result == '<') {
 	    right = guess - 1;
-	} else
-	if (result == '>') {
+	} else if (result == '>') {
 	    left = guess + 1;
 	}
 	
@@ -78,12 +81,10 @@ int main(int argc, char* argv[]) {
 	guessNetwork = htonl(guess);
 
         if (!SendAll(socketfd, (char*)&guessNetwork, sizeof(guessNetwork))) {
-	    retCode = 1;
             break;
         }
 
         if (!RecvAll(socketfd, &result, sizeof(result))) {
-	    retCode = 1;
 	    break;
 	}
 

@@ -6,12 +6,13 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <arpa/inet.h>
 
 #include "io.h"
 
 #define MAX 1000000000
+#define MAX_ATTEMPTS 32
 
 void PrintUsage(const char* prog) {
     fprintf(stderr, "=== number guessing client ===\n");
@@ -21,9 +22,9 @@ void PrintUsage(const char* prog) {
 int main(int argc, char* argv[]) {
 
     if (argc != 2) {
-        fprintf(stderr, "Wrong number of parameters\n");
+        fprintf(stderr, "Wrong number of parameters!\n");
 	PrintUsage(argv[0]);
-	exit(1);
+	return 1;
     }
 
     char* socketPath = argv[1];
@@ -33,27 +34,37 @@ int main(int argc, char* argv[]) {
 
     if ((socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         perror("socket");
-        exit(1);
+        return 1;
     }
 
     fprintf(stderr, "Trying to connect...\n");
 
     remote.sun_family = AF_UNIX;
+    if (strlen(socketPath) >= sizeof(remote.sun_path)) {
+        fprintf(stderr, "path '%s' is too long for UNIX domain socket\n", socketPath);
+        return 1;
+    }
     strcpy(remote.sun_path, socketPath);
     len = strlen(remote.sun_path) + sizeof(remote.sun_family);
     if (connect(socketfd, (struct sockaddr *)&remote, len) == -1) {
         perror("connect");
-        exit(1);
+        return 1;
     }
 
     fprintf(stderr, "Connected.\n");
 
-    uint32_t left = 0, right = MAX, guess = (right + left) / 2;
-    uint32_t guessNetwork;
+    uint32_t left = 0, right = MAX, guess = 0, guessNetwork;
+    int attempt = 1, retCode = 0;
 
     char result = ' ';
 
-   while (result != '=') {
+    while (result != '=') {
+
+	if (attempt > MAX_ATTEMPTS) {
+	    fprintf(stderr, "limit of attempts reached, exit...\n");
+	    retCode = 1;
+	    break;
+	}
 
 	if (result == '<') {
 	    right = guess - 1;
@@ -67,21 +78,28 @@ int main(int argc, char* argv[]) {
 	guessNetwork = htonl(guess);
 
         if (!SendAll(socketfd, (char*)&guessNetwork, sizeof(guessNetwork))) {
-            fprintf(stderr, "Send failed\n");
-            exit(1);
+	    retCode = 1;
+            break;
         }
 
         if (!RecvAll(socketfd, &result, sizeof(result))) {
-	    fprintf(stderr, "Recieve failed\n");
-	    exit(1);
+	    retCode = 1;
+	    break;
 	}
 
-	fprintf(stderr, "Guessed %d, recieved %c\n", guess, result);
+        attempt++;
+
+	fprintf(stderr, "* attempt #%d: guessed %"PRIu32", recieved %c\n", attempt, guess, result);
     }
 
-    printf("Secret number is %d\n", guess);
+    if (!retCode) {
+	printf("secret number is %"PRIu32"\n", guess);
+    }
 
-    close(socketfd);
+    if (close(socketfd) == -1) {
+        perror("close socket");
+        return 1;
+    }
 
-    return 0;
+    return retCode;
 }

@@ -62,6 +62,9 @@ static ssize_t ioctl_nulll(struct file *file, unsigned int cmd, unsigned long ar
 		}
 		mutex_unlock(&lock);
 	}
+	else {
+		result = -ENOTTY;
+	}
 out:        
 	return result;
 }
@@ -81,15 +84,21 @@ static struct miscdevice nulll_misc_device = {
 
 static int __init nulll_init(void)
 {
-	if (capacity < 0) {
-		printk(KERN_ERR "nulll device doesn't accept negative capacity \n");
-	}
+	int ret = 0;
 
 	mutex_init(&lock);
-	misc_register(&nulll_misc_device);
 
-	if (capacity)
+	ret = misc_register(&nulll_misc_device);
+	if (ret) {
+		printk(KERN_ERR "misc_register error\n");
+
+		mutex_destroy(&lock);
+		return ret;
+	}
+
+	if (capacity) {
 		printk(KERN_INFO "nulll device has been registered, capacity is %lu bytes\n", capacity);
+	}
 	else {
 		printk(KERN_INFO "nulll device has been registered, capacity is infinite\n");		
 	}

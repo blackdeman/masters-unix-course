@@ -19,6 +19,12 @@ MODULE_PARM_DESC(capacity, "Internal buffer capacity");
 static unsigned long used = 0;
 static struct mutex lock;
 
+static ssize_t read_null(struct file *file, char __user *buf,
+			 size_t count, loff_t *ppos)
+{
+	return 0;
+}
+
 static ssize_t write_nulll(struct file *file, const char __user *buf,
 			  size_t count, loff_t *ppos)
 {
@@ -62,6 +68,7 @@ out:
 
 static const struct file_operations nulll_fops = {
 	.owner = THIS_MODULE,
+	.read		= read_null,
 	.write		= write_nulll,
 	.unlocked_ioctl = (void*)&ioctl_nulll,
 };
